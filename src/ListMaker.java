@@ -1,6 +1,29 @@
 import java.util.Scanner;
 import java.util.ArrayList;
+//import file handling stuff
+import javax.swing.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.nio.Buffer;
+import java.io.FileWriter;
+import java.io.IOException;
 public class ListMaker {
+
+    public static void fileSaver(String path, Scanner pipe, ArrayList<String> list){
+        File workingDir = new File(path);
+        String filePath = workingDir.getAbsolutePath();
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))){
+            for(int i = 0; i < list.size(); i++){
+                writer.write(list.get(i));
+                writer.newLine();
+            }
+            System.out.println("Data saved to " + filePath);
+        } catch(IOException e){
+            System.out.println("An error occurred while saving the file: " + e.getMessage());
+            SafeInput.getYNConfirm(pipe, "Do you want to try saving again?");
+        }
+    }
+
     public static void main(String[] args) {
         Scanner in = new  Scanner(System.in);
         String input = "";
