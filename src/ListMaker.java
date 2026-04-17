@@ -49,10 +49,10 @@ public class ListMaker {
 
     public static ArrayList<String> fileReader(Path path, Scanner pipe, ArrayList<String> list){
         boolean done = false;
-        File selectedFile = path.toFile();
         String line = "";
         while(!done) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
+            File selectedFile;
+            try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile = path.toFile()))) {
                 System.out.println("Reading data from " + path);
                 for (int i = 0; i < selectedFile.length(); i++) {
                     line = reader.readLine();
@@ -123,18 +123,11 @@ public class ListMaker {
                        if (SafeInput.getYNConfirm(in, "You have unsaved changes. Do you want to save before opening a new file?")) {
                            path = getPath(true);
                            fileSaver(path, in, list);
-                           list.clear();
-                           list = fileReader(path, in, list);
-                       } else {
-                           path = getPath(false);
-                           list.clear();
-                           list = fileReader(path, in, list);
                        }
-                    } else {
-                        path = getPath(false);
-                        list.clear();
-                        list = fileReader(path, in, list);
                     }
+                    path = getPath(false);
+                    list.clear();
+                    list = fileReader(path, in, list);
                     break;
                 case "S":
                     path = getPath(true);
