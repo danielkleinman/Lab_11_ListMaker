@@ -1,27 +1,71 @@
+import java.io.*;
+import java.lang.reflect.Array;
+import java.nio.file.Path;
 import java.util.Scanner;
 import java.util.ArrayList;
 //import file handling stuff
 import javax.swing.*;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.nio.Buffer;
-import java.io.FileWriter;
-import java.io.IOException;
+
 public class ListMaker {
 
-    public static void fileSaver(String path, Scanner pipe, ArrayList<String> list){
-        File workingDir = new File(path);
-        String filePath = workingDir.getAbsolutePath();
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))){
-            for(int i = 0; i < list.size(); i++){
-                writer.write(list.get(i));
-                writer.newLine();
+    public static Path getPath(boolean isSave){
+        JFileChooser chooser = new JFileChooser();
+        File selectedFile = null;
+        File workingDir = new File(System.getProperty("user.dir"));
+        chooser.setCurrentDirectory(workingDir);
+            int userSelection;
+            if (isSave) {
+                userSelection = chooser.showSaveDialog(null);
+            } else {
+                userSelection = chooser.showOpenDialog(null);
             }
-            System.out.println("Data saved to " + filePath);
-        } catch(IOException e){
-            System.out.println("An error occurred while saving the file: " + e.getMessage());
-            SafeInput.getYNConfirm(pipe, "Do you want to try saving again?");
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                selectedFile = chooser.getSelectedFile();
+                return selectedFile.toPath();
+            } else {return null;}
+    }
+
+    public static void fileSaver(Path path, Scanner pipe, ArrayList<String> list){
+        boolean done = false;
+        File selectedFile = null;
+        while(!done) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(path.toFile()))) {
+                    for (int i = 0; i < list.size(); i++) {
+                        writer.write(list.get(i));
+                        writer.newLine();
+                    }
+                    done = true;
+                    System.out.println("Data saved to " + path);
+                } catch (IOException e) {
+                    System.out.println("An error occurred while saving the file: " + e.getMessage());
+                    done = !SafeInput.getYNConfirm(pipe, "Do you want to try saving again?");
+                }
         }
+    }
+
+    public static ArrayList<String> fileReader(Path path, Scanner pipe, ArrayList<String> list){
+        boolean done = false;
+        File selectedFile = path.toFile();
+        String line = "";
+        while(!done) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
+                System.out.println("Reading data from " + path);
+                for (int i = 0; i < selectedFile.length(); i++) {
+                    line = reader.readLine();
+                    if(line != null) {
+                        list.add(line);
+                    } else {break;}
+                    System.out.println("Read line: " + list.get(i));
+                }
+                System.out.println("Data successfully loaded from " + path);
+                done = true;
+            } catch (IOException e) {
+                System.out.println("An error occurred while reading the file: " + e.getMessage());
+                done = !SafeInput.getYNConfirm(pipe, "Do you want to try loading again?");
+            }
+        }
+        return list;
     }
 
     public static void main(String[] args) {
@@ -31,6 +75,7 @@ public class ListMaker {
         int num2 = 0;
         boolean needsToBeSaved = false;
         ArrayList<String> list = new ArrayList<String>();
+        Path path = null;
         boolean done = false;
         do {
             input = SafeInput.getRegExString(in,"Choose from the following options : [A]dd,[D]elete,[I]nsert,[M]ove,[O]pen,[S]ave,[C]lear,[V]iew,[Q]uit","^[AaDdIiMmOoSsCcVvQq]$");
@@ -59,6 +104,7 @@ public class ListMaker {
                         num2 = getListPos(in, "Enter the new position", list);
                         if (num < num2) {
                             list.add(num2, list.get(num));
+
                             list.remove(num);
                         } else {
                             list.add(num2, list.get(num));
@@ -67,19 +113,33 @@ public class ListMaker {
                         needsToBeSaved = true;
                     }
                 case "O":
-
+                    path = getPath(false);
+                    list.clear();
+                    list = fileReader(path, in, list);
+                    break;
                 case "S":
-
+                    path = getPath(true);
+                    fileSaver(path,in,list);
+                    break;
                 case "C":
-
+                    if(SafeInput.getYNConfirm(in,"Are you sure you want to clear the list?")) {
+                        list.clear();
+                        needsToBeSaved = true;
+                    }
+                    break;
                 case "V":
                     System.out.println("List:");
                     printList(list);
                     break;
                 case "Q":
+                    if(needsToBeSaved) {
+                        if (SafeInput.getYNConfirm(in, "You have unsaved changes. Do you want to save before quitting?")) {
+                            path = getPath(true);
+                            fileSaver(path, in, list);
+                        }
+                    }
                     done = SafeInput.getYNConfirm(in, "Are you sure you want to quit?");
                     break;
-
             }
         }while(!done);
     }
