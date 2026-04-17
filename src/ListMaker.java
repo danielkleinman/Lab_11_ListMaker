@@ -40,6 +40,9 @@ public class ListMaker {
                 } catch (IOException e) {
                     System.out.println("An error occurred while saving the file: " + e.getMessage());
                     done = !SafeInput.getYNConfirm(pipe, "Do you want to try saving again?");
+                } catch (NullPointerException e) {
+                    System.out.println("No file selected. Nothing to save.");
+                    done = true;
                 }
         }
     }
@@ -63,6 +66,9 @@ public class ListMaker {
             } catch (IOException e) {
                 System.out.println("An error occurred while reading the file: " + e.getMessage());
                 done = !SafeInput.getYNConfirm(pipe, "Do you want to try loading again?");
+            } catch (NullPointerException e) {
+                System.out.println("No file selected. Nothing to load.");
+                done = true;
             }
         }
         return list;
@@ -113,13 +119,27 @@ public class ListMaker {
                         needsToBeSaved = true;
                     }
                 case "O":
-                    path = getPath(false);
-                    list.clear();
-                    list = fileReader(path, in, list);
+                    if(needsToBeSaved) {
+                       if (SafeInput.getYNConfirm(in, "You have unsaved changes. Do you want to save before opening a new file?")) {
+                           path = getPath(true);
+                           fileSaver(path, in, list);
+                           list.clear();
+                           list = fileReader(path, in, list);
+                       } else {
+                           path = getPath(false);
+                           list.clear();
+                           list = fileReader(path, in, list);
+                       }
+                    } else {
+                        path = getPath(false);
+                        list.clear();
+                        list = fileReader(path, in, list);
+                    }
                     break;
                 case "S":
                     path = getPath(true);
                     fileSaver(path,in,list);
+                    needsToBeSaved = false;
                     break;
                 case "C":
                     if(SafeInput.getYNConfirm(in,"Are you sure you want to clear the list?")) {
